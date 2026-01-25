@@ -41,21 +41,48 @@
 
    each page is 8KB in size, which is 8192 Bytes
    so, the amount of data we can store is (PAGE_SIZE - sizeof(HEADER))
+
+	inserts:
+	- one way to handle inserts is to just keep writing records continously 
+	- but sometimes, a record might not entirely fit within this page and only a portion of it does. in this case a part of the record will be in one page and the other in an nother page which required 2 page access to read.
+	- to overcome this limitation, we only add as many records that can fit within a single page. so i need to write an if-check to decide to place or not.
+
+	- another problem is, when we delete a record, we open up a free space. one way to fill this space is to just shift all the records, but is very inefficient. so we need a way to "mark" free spaces and add records to available free spaces on insert.
+
+	- we can do this by using a "free-space" list. it is basically a linked list that stored which block is free.
 */
 
+#define PAGE_SIZE 8192
+#define RECORD_SIZE 64
+#define MAX_SLOTS ((PAGE_SIZE - sizeof(PageHeader)) / RECORD_SIZE)
 
-#define PAGE_SIZE 8192 
+typedef struct {
+	int id;
+	char name[32];
+	int age;
+	char email[24];
+} Record;
+
+typedef struct {
+	int next_free_slot;
+} FreeSlot;
+
 typedef struct {
 	int page_id;
-	int num_records;
-	int available_size;
+	int num_slots;
+	int first_free_slot;
 } PageHeader;
 
 typedef struct {
 	PageHeader header;
-	char data[PAGE_SIZE - sizeof(PageHeader)];
+	char storage[PAGE_SIZE - sizeof(PageHeader)];
 } HeapPage;
 
-int insert_record(HeapPage *page, const char *record); 
-#endif
 
+// slot related functions
+void * get_slot(HeapPage *page, int slot_idx);
+
+// page related functions
+int insert_record(HeapPage *page, Record* record);
+void delete_record(HeapPage *page, int slot_idx);
+#endif

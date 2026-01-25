@@ -1,28 +1,40 @@
 #include "../include/heap.h"
 #include <string.h>
 
-int insert_record(HeapPage *page, const char *record){
 
-	size_t recordSize = strlen(record);
-	int availableSize = page->header.available_size;
+void * get_slot(HeapPage *page, int slot_idx){
+	if (slot_idx > page->header.num_slots) return NULL;
+	return page->storage + (slot_idx * RECORD_SIZE);
+}
 
-	// if the record to insert is larger than the available size
-	// we cannot store the record in this page.
-	if (recordSize > availableSize){
-		return -1;
+int insert_record(HeapPage *page, Record* record){
+
+	int slot_idx;
+	if (page->header.first_free_slot != -1){
+		slot_idx = page->header.first_free_slot;
+		FreeSlot *slot = (FreeSlot *) get_slot(page, slot_idx);
+		page->header.first_free_slot = slot->next_free_slot;
 	}
 
-	// this initial implementation assumes that page->num_records
-	// is the start of the next free space. so basically we keep inserting
-	// records at the end of the free space in the page.
-	
-	int recordId = page->header.num_records/recordSize; 
-	// copies record to page->data (first el address) + num_records
-	// which gives the new starting address to start placing this data.
-	memcpy(page->data + page->header.num_records, record, recordSize);
+	else {
+		if (page->header.num_slots >= MAX_SLOTS){
+			return -1;
+		}
+		slot_idx = page->header.num_slots;
+		page->header.num_slots++;
+	}
 
-	// now we need to update the metadata of this page
-	page->header.num_records += recordSize;
-	page->header.available_size -= recordSize;
-	return recordId;
+	// now that we have determined where to write this record to
+	// we can start writing it using memcpy
+	void *dest = get_slot(page, slot_idx);
+	memcpy(dest, record, RECORD_SIZE);
+	return slot_idx;
+}
+
+void delete_record(HeapPage *page, int slot_idx){
+	if (slot_idx > page->header.num_slots) return;
+
+	FreeSlot *slot = (FreeSlot *)get_slot(page, slot_idx);
+	slot->next_free_slot = page->header.first_free_slot;
+	page->header.first_free_slot = slot_idx;
 }
