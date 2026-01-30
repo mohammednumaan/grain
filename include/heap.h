@@ -70,7 +70,8 @@
 typedef enum {
 	GRAIN_OK = 0,
 	GRAIN_NULL_PTR,
-	GRAIN_INVALID_SLOT
+	GRAIN_INVALID_SLOT,
+	GRAIN_FILE_ERROR
 } GrainResult;
 
 typedef struct {
