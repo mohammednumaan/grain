@@ -14,8 +14,10 @@
  * the reason they are called 'heap' files is because they can be placed anywhere within the file
 */
 
+
 typedef struct {
 	int num_pages;
+	int next_page_idx;
 	int next_free_page;
 } FileHeader;
 
@@ -34,7 +36,5 @@ HeapFile * create_file(const char *filename);
 HeapFile * open_file(const char *filename);
 GrainResult close_file(HeapFile *file);
 
-// Page-level I/O operations
-GrainResult hf_read_page(HeapFile *hf, int page_id, HeapPage *page_buffer);
-GrainResult hf_write_page(HeapFile *hf, int page_id, const HeapPage *page_buffer);
+int hf_alloc_page(HeapFile *hf);
 #endif

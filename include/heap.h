@@ -104,6 +104,7 @@ bool has_free_space(HeapPage *page);
 bool is_in_free_list(HeapPage *page, int slot_idx);
 
 // page related functions
+HeapPage * init_page(HeapPage *page, int page_id);
 int insert_record(HeapPage *page, Record* record);
 GrainResult delete_record(HeapPage *page, int slot_idx);
 GrainResult update_record(HeapPage *page, int slot_idx, Record* new_record);

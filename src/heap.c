@@ -6,6 +6,13 @@ static inline bool slot_in_range(const HeapPage *page, int slot_idx) {
     return slot_idx >= 0 && slot_idx < page->header.next_slot_idx;
 }
 
+HeapPage * init_page(HeapPage *page, int page_id){
+	page->header.page_id = page_id;
+	page->header.num_slots = 0;
+	page->header.next_slot_idx = 0;
+	page->header.first_free_slot = FREE_SLOT_END;
+}
+
 void * get_slot(HeapPage *page, int slot_idx){
     CHECK_RET_NULL(page);
 
