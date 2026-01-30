@@ -2,6 +2,7 @@
 #define HEAP_H
 
 #include <stdlib.h>
+#include <stdbool.h>
 
 /*
  * grain uses a "heap" file to ogranize data. a heap file is simply a file where data is stored in a random order.
@@ -55,6 +56,22 @@
 #define PAGE_SIZE 8192
 #define RECORD_SIZE 64
 #define MAX_SLOTS ((PAGE_SIZE - sizeof(PageHeader)) / RECORD_SIZE)
+#define CHECK_PTR_RET(ptr, ret_val) if ((ptr) == NULL) return (ret_val);
+#define CHECK_PTR_VOID(ptr) if ((ptr) == NULL) return;
+
+#define FREE_SLOT_END -1
+
+#define CHECK_RET_NULL(ptr) if ((ptr) == NULL) return NULL;
+#define CHECK_RET_BOOL(ptr) if ((ptr) == NULL) return false;
+#define CHECK_RET_INT(ptr) if ((ptr) == NULL) return -1;
+#define CHECK_RET_GRAIN_NULL(ptr) if ((ptr) == NULL) return GRAIN_NULL_PTR;
+#define CHECK_RET_GRAIN_INVALID(ptr) if ((ptr) == NULL) return GRAIN_INVALID_SLOT;
+
+typedef enum {
+	GRAIN_OK = 0,
+	GRAIN_NULL_PTR,
+	GRAIN_INVALID_SLOT
+} GrainResult;
 
 typedef struct {
 	int id;
@@ -70,6 +87,7 @@ typedef struct {
 typedef struct {
 	int page_id;
 	int num_slots;
+	int next_slot_idx;
 	int first_free_slot;
 } PageHeader;
 
@@ -81,8 +99,12 @@ typedef struct {
 
 // slot related functions
 void * get_slot(HeapPage *page, int slot_idx);
+bool has_free_space(HeapPage *page);
+bool is_in_free_list(HeapPage *page, int slot_idx);
 
 // page related functions
 int insert_record(HeapPage *page, Record* record);
-void delete_record(HeapPage *page, int slot_idx);
+GrainResult delete_record(HeapPage *page, int slot_idx);
+GrainResult update_record(HeapPage *page, int slot_idx, Record* new_record);
+Record * get_record(HeapPage *page, int slot_idx);
 #endif
