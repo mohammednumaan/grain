@@ -35,6 +35,9 @@ typedef struct {
 HeapFile * create_file(const char *filename);
 HeapFile * open_file(const char *filename);
 GrainResult close_file(HeapFile *file);
+int write_file_header(HeapFile *hf);
 
 int hf_alloc_page(HeapFile *hf);
+GrainResult write_page(HeapFile *hf, HeapPage *hp);
+GrainResult read_page(HeapFile *hf, HeapPage *hp, int page_id);
 #endif
