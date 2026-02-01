@@ -4,40 +4,37 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include "./heap.h"
-/*
- 
- * most databases store data via normal files. when i say normal i mean files that the operating system can recognize and handle. its not a special file that the os cannot handle.
- 
- * we are done with implementing a basic version of the heap page structure for fixed records
- * next step is to organize those pages within these files, called the 'heap' files.
- * the reason they are called 'heap' files is because they can be placed anywhere within the file
-*/
-
+#include <stdint.h>
+#include "heap.h"
 
 typedef struct {
-	int num_pages;
-	int next_page_idx;
-	int next_free_page;
+    int32_t num_pages;
+    int32_t next_page_idx;
+    int32_t first_free_page;
 } FileHeader;
 
 typedef struct {
-	FileHeader header;
-	FILE *file_ptr;
+    FileHeader header;
+    FILE *file_ptr;
 } HeapFile;
 
-
 typedef struct {
-    int page_id;
-    int slot_idx;
+    int32_t page_id;
+    int32_t slot_idx;
 } RecordId;
 
-HeapFile * create_file(const char *filename);
-HeapFile * open_file(const char *filename);
+HeapFile *create_file(const char *filename);
+HeapFile *open_file(const char *filename);
 GrainResult close_file(HeapFile *file);
-int write_file_header(HeapFile *hf);
+GrainResult write_file_header(HeapFile *hf);
 
-int hf_alloc_page(HeapFile *hf);
+GrainResult hf_alloc_page(HeapFile *hf, int32_t *page_id);
 GrainResult write_page(HeapFile *hf, HeapPage *hp);
-GrainResult read_page(HeapFile *hf, HeapPage *hp, int page_id);
+GrainResult read_page(HeapFile *hf, HeapPage *hp, int32_t page_id);
+
+GrainResult hf_insert_record(HeapFile *hf, Record *rec);
+GrainResult hf_scan_next(HeapFile *hf, RecordId *rid, Record *rec);
+GrainResult hf_update_record(HeapFile *hf, RecordId rid, Record *rec);
+GrainResult hf_delete_record(HeapFile *hf, RecordId rid);
+
 #endif

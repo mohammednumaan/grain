@@ -3,62 +3,11 @@
 
 #include <stdlib.h>
 #include <stdbool.h>
-
-/*
- * grain uses a "heap" file to ogranize data. a heap file is simply a file where data is stored in a random order.
- * each "heap" file is partitioned into multiple pages. we can call these pages "heap" pages. there pages are fixed-size and contains
- the actual data.
- 
- this is the initial phase of the project so i'll be focusing on the following:
- > implementing a heap file and basic operations associated with it.
- > implementing a heap page for *fixed-length* records.
-
-
- here are some questions i need to answer:
- > how are pages stored in the file?
- > how are records stored in the record?
- > how are fields stored in the record? 
- 	* differs for fixed-length (or) variable-length records.
-
-
-
- fixed-length records:
-   so each record is of fixed-length meaning they only contain attributes which take char, int, boolean and other fixed-size values.
-   each page will have something called a page header to store information about the current page. following the page header is just a bunch of
-   records and free space.
-
-   the structure can be visualized as:
-   +-------------+
-   | page header |
-   +-------------+
-   | record 01   |
-   +-------------+
-   | record 02   |
-   +-------------+
-   | record n    |
-   +-------------+
-   | free space  |
-   +-------------+
-
-   each page is 8KB in size, which is 8192 Bytes
-   so, the amount of data we can store is (PAGE_SIZE - sizeof(HEADER))
-
-	inserts:
-	- one way to handle inserts is to just keep writing records continously 
-	- but sometimes, a record might not entirely fit within this page and only a portion of it does. in this case a part of the record will be in one page and the other in an nother page which required 2 page access to read.
-	- to overcome this limitation, we only add as many records that can fit within a single page. so i need to write an if-check to decide to place or not.
-
-	- another problem is, when we delete a record, we open up a free space. one way to fill this space is to just shift all the records, but is very inefficient. so we need a way to "mark" free spaces and add records to available free spaces on insert.
-
-	- we can do this by using a "free-space" list. it is basically a linked list that stored which block is free.
-*/
+#include <stdint.h>
 
 #define PAGE_SIZE 8192
 #define RECORD_SIZE 64
 #define MAX_SLOTS ((PAGE_SIZE - sizeof(PageHeader)) / RECORD_SIZE)
-#define CHECK_PTR_RET(ptr, ret_val) if ((ptr) == NULL) return (ret_val);
-#define CHECK_PTR_VOID(ptr) if ((ptr) == NULL) return;
-
 #define FREE_SLOT_END -1
 
 #define CHECK_RET_NULL(ptr) if ((ptr) == NULL) return NULL;
@@ -68,45 +17,52 @@
 #define CHECK_RET_GRAIN_INVALID(ptr) if ((ptr) == NULL) return GRAIN_INVALID_SLOT;
 
 typedef enum {
-	GRAIN_OK = 0,
-	GRAIN_NULL_PTR,
-	GRAIN_INVALID_SLOT,
-	GRAIN_FILE_ERROR
+    GRAIN_OK              =  0,
+    GRAIN_END             =  1,
+    GRAIN_NULL_PTR        = -1,
+    GRAIN_INVALID_SLOT    = -2,
+    GRAIN_RECORD_NOT_FOUND= -3,
+    GRAIN_PAGE_FULL       = -4,
+    GRAIN_INVALID_PAGE_ID = -5,
+    GRAIN_FILE_OPEN_FAILED= -6,
+    GRAIN_FILE_READ_FAILED= -7,
+    GRAIN_FILE_WRITE_FAILED=-8,
+    GRAIN_FILE_SEEK_FAILED= -9,
+    GRAIN_CORRUPT_HEADER  = -10
 } GrainResult;
 
 typedef struct {
-	int id;
-	char name[32];
-	int age;
-	char email[24];
+    int32_t id;
+    char name[32];
+    int32_t age;
+    char email[24];
 } Record;
 
 typedef struct {
-	int next_free_slot;
+    int32_t next_free_slot;
 } FreeSlot;
 
 typedef struct {
-	int page_id;
-	int num_slots;
-	int next_slot_idx;
-	int first_free_slot;
+    int32_t page_id;
+    int32_t num_slots;
+    int32_t next_slot_idx;
+    int32_t first_free_slot;
+    int32_t next_free_page;
 } PageHeader;
 
 typedef struct {
-	PageHeader header;
-	char storage[PAGE_SIZE - sizeof(PageHeader)];
+    PageHeader header;
+    char storage[PAGE_SIZE - sizeof(PageHeader)];
 } HeapPage;
 
-
-// slot related functions
-void * get_slot(HeapPage *page, int slot_idx);
+void *get_slot(HeapPage *page, int32_t slot_idx);
 bool has_free_space(HeapPage *page);
-bool is_in_free_list(HeapPage *page, int slot_idx);
+bool is_in_free_list(HeapPage *page, int32_t slot_idx);
 
-// page related functions
-HeapPage * init_page(HeapPage *page, int page_id);
-int insert_record(HeapPage *page, Record* record);
-GrainResult delete_record(HeapPage *page, int slot_idx);
-GrainResult update_record(HeapPage *page, int slot_idx, Record* new_record);
-Record * get_record(HeapPage *page, int slot_idx);
+HeapPage *init_page(HeapPage *page, int32_t page_id);
+int32_t insert_record(HeapPage *page, Record *record);
+GrainResult delete_record(HeapPage *page, int32_t slot_idx);
+GrainResult update_record(HeapPage *page, int32_t slot_idx, Record *new_record);
+Record *get_record(HeapPage *page, int32_t slot_idx);
+
 #endif
